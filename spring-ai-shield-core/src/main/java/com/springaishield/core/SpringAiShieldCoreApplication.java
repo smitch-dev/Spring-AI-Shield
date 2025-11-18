@@ -1,4 +1,4 @@
-package com.springaishield.springaishieldcore;
+package com.springaishield.core;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
