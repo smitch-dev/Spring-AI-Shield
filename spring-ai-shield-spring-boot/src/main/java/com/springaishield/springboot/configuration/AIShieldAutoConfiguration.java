@@ -3,6 +3,7 @@ package com.springaishield.springboot.configuration;
 // ... imports existants
 
 import com.springaishield.core.impl.SimpleRuleEngine;
+import com.springaishield.core.repository.BehaviorRepository;
 import com.springaishield.core.service.RiskScoringService;
 import com.springaishield.springboot.security.AIShieldFilter; // NOUVEL IMPORT
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -16,7 +17,18 @@ import org.springframework.security.web.SecurityFilterChain; // Pour l'objet ret
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // Pour placer le filtre avant
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer; // Pour disable CSRF
 
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+
+
+/**
+ * Active le système de sécurité adaptatif Spring AI Shield.
+ */
 @Configuration
+@ComponentScan(basePackages = "com.springaishield.springboot") // S'assure que Spring trouve le BehaviorRepositoryImpl
+@EntityScan(basePackages = "com.springaishield.springboot.persistence.entity") // Déclare où chercher les @Entity JPA
+@EnableJpaRepositories(basePackages = "com.springaishield.springboot.persistence.jpa") // Active le Repositories Spring Data
 public class AIShieldAutoConfiguration {
 
     // ... (riskScoringService Bean existant) ...
@@ -27,11 +39,14 @@ public class AIShieldAutoConfiguration {
     }
     // ...
 
-    // NOUVEAU BEAN : Enregistrement du filtre de sécurité
-    // Nous le rendons disponible pour injection.
+    /// NOUVEAU BEAN : Enregistrement du filtre de sécurité
+    // Ajout de BehaviorRepository
     @Bean
-    public AIShieldFilter aiShieldFilter(RiskScoringService riskScoringService) {
-        return new AIShieldFilter(riskScoringService);
+    public AIShieldFilter aiShieldFilter(
+            RiskScoringService riskScoringService,
+            BehaviorRepository behaviorRepository // Injecté automatiquement par l'implémentation @Service
+    ) {
+        return new AIShieldFilter(riskScoringService, behaviorRepository);
     }
 
     // NOUVEAU BEAN : Configuration de Spring Security
