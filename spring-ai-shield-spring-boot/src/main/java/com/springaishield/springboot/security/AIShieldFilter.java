@@ -12,6 +12,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
+import com.springaishield.core.model.UserBehavior; // NOUVEL IMPORT
+import com.springaishield.core.repository.BehaviorRepository; // NOUVEL IMPORT
+
 /**
  * Filtre principal inséré dans la chaîne Spring Security.
  * Il intercepte chaque requête, calcule le risque et décide de l'action.
@@ -21,10 +25,12 @@ public class AIShieldFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(AIShieldFilter.class);
 
     private final RiskScoringService riskScoringService;
+    private final BehaviorRepository behaviorRepository;
 
     // Le filtre a besoin du service de scoring (injecté par Spring)
-    public AIShieldFilter(RiskScoringService riskScoringService) {
+    public AIShieldFilter(RiskScoringService riskScoringService, BehaviorRepository behaviorRepository) {
         this.riskScoringService = riskScoringService;
+        this.behaviorRepository = behaviorRepository;
     }
 
     @Override
@@ -37,6 +43,9 @@ public class AIShieldFilter extends OncePerRequestFilter {
         // userId est simple pour l'instant; il sera plus complexe une fois l'utilisateur authentifié
         String userId = request.getRemoteUser() != null ? request.getRemoteUser() : "ANONYMOUS";
 
+        // Définir le type d'événement initial : par défaut, un accès simple.
+        String eventType = "ACCESS_GRANTED";
+
         SecurityContext context = new SecurityContext(userId, ipAddress, requestUrl);
 
         // 2. Calcul du Score de Risque (Appel à notre module Core)
@@ -45,15 +54,22 @@ public class AIShieldFilter extends OncePerRequestFilter {
         log.info("AIShield Analysis: URL={} | User={} | Risk Score={} ({})",
                 requestUrl, userId, risk.score(), risk.reason());
 
-        // 3. Prise de Décision (Logique de blocage simple pour l'MVP)
+        // 3. Prise de Décision (Logique de blocage)
         if (risk.score() > 0.8) {
+            // Si bloqué, l'événement est un DENIAL
+            eventType = "ACCESS_DENIED";
             log.warn("RISK HIGH! Blocking request from {} for URL {}", ipAddress, requestUrl);
             response.setStatus(HttpServletResponse.SC_FORBIDDEN); // Code HTTP 403
             response.getWriter().write("Accès bloqué par Spring AI Shield : Risque élevé.");
-            return; // Arrête la chaîne de filtres
         }
 
-        // Si le risque est acceptable, continue la chaîne de filtres Spring Security
-        filterChain.doFilter(request, response);
+        // 4. SAUVEGARDE DANS LA BASE DE DONNÉES
+        UserBehavior behavior = new UserBehavior(userId, ipAddress, eventType, requestUrl, risk);
+        behaviorRepository.save(behavior);
+
+        // 5. Continuation de la chaîne (seulement si non bloqué)
+        if (risk.score() <= 0.8) {
+            filterChain.doFilter(request, response);
+        }
     }
 }
