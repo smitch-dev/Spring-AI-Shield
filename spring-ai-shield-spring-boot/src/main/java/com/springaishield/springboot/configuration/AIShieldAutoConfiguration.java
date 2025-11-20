@@ -1,70 +1,70 @@
 package com.springaishield.springboot.configuration;
 
-// ... imports existants
-
-import com.springaishield.core.impl.SimpleRuleEngine;
+import com.springaishield.core.impl.BehavioralScoringEngine;
 import com.springaishield.core.repository.BehaviorRepository;
 import com.springaishield.core.service.RiskScoringService;
-import com.springaishield.springboot.security.AIShieldFilter; // NOUVEL IMPORT
+import com.springaishield.springboot.security.AIShieldFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.web.SecurityFilterChain; // NOUVEL IMPORT
-
-// Les imports Spring Security à ajouter/corriger :
-import org.springframework.security.config.annotation.web.builders.HttpSecurity; // Pour la classe HttpSecurity
-import org.springframework.security.web.SecurityFilterChain; // Pour l'objet retourné
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // Pour placer le filtre avant
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer; // Pour disable CSRF
-
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Active le système de sécurité adaptatif Spring AI Shield.
+ * Classe d'Auto-Configuration de Spring Boot pour le module AI Shield.
+ * Active les composants, la sécurité et la persistance par défaut.
  */
 @Configuration
-@ComponentScan(basePackages = "com.springaishield.springboot") // S'assure que Spring trouve le BehaviorRepositoryImpl
-@EntityScan(basePackages = "com.springaishield.springboot.persistence.entity") // Déclare où chercher les @Entity JPA
-@EnableJpaRepositories(basePackages = "com.springaishield.springboot.persistence.jpa") // Active le Repositories Spring Data
+// 1. Détecte tous les services (@Service, etc.) dans ce module
+@ComponentScan(basePackages = "com.springaishield.springboot")
+// 2. Active la détection des Entités JPA (UserBehaviorEntity)
+@EntityScan(basePackages = "com.springaishield.springboot.persistence.entity")
+// 3. Active la création des Repositories Spring Data (JpaBehaviorRepository)
+@EnableJpaRepositories(basePackages = "com.springaishield.springboot.persistence.jpa")
 public class AIShieldAutoConfiguration {
 
-    // ... (riskScoringService Bean existant) ...
+    /**
+     * Définit l'implémentation du moteur de scoring IA.
+     * On remplace le SimpleRuleEngine par le moteur Comportemental/Hybride (Tâche 10/11).
+     * @param behaviorRepository Injecté par Spring grâce à @Service sur BehaviorRepositoryImpl
+     * @return Le moteur de scoring Hybride
+     */
     @Bean
-    @ConditionalOnMissingBean
-    public RiskScoringService riskScoringService() {
-        return new SimpleRuleEngine();
+    @ConditionalOnMissingBean // Permet à l'utilisateur de définir son propre moteur s'il le souhaite
+    public RiskScoringService riskScoringService(BehaviorRepository behaviorRepository) {
+        // Le moteur IA Hybride a besoin d'accéder à l'historique
+        return new BehavioralScoringEngine(behaviorRepository);
     }
-    // ...
 
-    /// NOUVEAU BEAN : Enregistrement du filtre de sécurité
-    // Ajout de BehaviorRepository
+    /**
+     * Définit le filtre de sécurité personnalisé.
+     * Injecte le moteur de scoring et le repository pour la prise de décision et la persistance.
+     */
     @Bean
     public AIShieldFilter aiShieldFilter(
             RiskScoringService riskScoringService,
-            BehaviorRepository behaviorRepository // Injecté automatiquement par l'implémentation @Service
+            BehaviorRepository behaviorRepository // Nouveau : pour l'enregistrement des événements
     ) {
         return new AIShieldFilter(riskScoringService, behaviorRepository);
     }
 
-    // NOUVEAU BEAN : Configuration de Spring Security
-    // Insère notre filtre avant les filtres d'authentification de base.
+    /**
+     * Insère le filtre AI Shield dans la chaîne de sécurité de Spring.
+     * Le filtre est placé avant l'authentification/autorisation.
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, AIShieldFilter aiShieldFilter) throws Exception {
+        http.csrf(csrf -> csrf.disable()) // CSRF désactivé pour la démo
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll() // Permet l'accès à toutes les URLs pour la démo
+                )
+                // Insère notre filtre avant les filtres d'authentification standards
+                .addFilterBefore(aiShieldFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // 1. Ajouter notre filtre AI Shield en premier (ou juste avant l'authentification standard)
-        http.addFilterBefore(aiShieldFilter, UsernamePasswordAuthenticationFilter.class);
-
-        // 2. Simplifier la configuration de sécurité pour l'exemple
-        // Désactiver la protection CSRF pour simplifier les tests (bonne pratique pour une API)
-        http.csrf(AbstractHttpConfigurer::disable);
-
-        // 3. Permettre l'accès à tous les requêtes (pour l'application de démo)
-        http.authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll() // Permet l'accès public à tout
-        );
         return http.build();
     }
 }
