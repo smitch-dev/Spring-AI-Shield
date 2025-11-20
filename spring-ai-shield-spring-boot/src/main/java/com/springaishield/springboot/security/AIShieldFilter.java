@@ -40,6 +40,9 @@ public class AIShieldFilter extends OncePerRequestFilter {
         // 1. Collecte du Contexte
         String ipAddress = request.getRemoteAddr();
         String requestUrl = request.getRequestURI();
+        if (request.getQueryString() != null) {
+            requestUrl += "?" + request.getQueryString(); // Inclut les paramètres
+        }
         // userId est simple pour l'instant; il sera plus complexe une fois l'utilisateur authentifié
         String userId = request.getRemoteUser() != null ? request.getRemoteUser() : "ANONYMOUS";
 

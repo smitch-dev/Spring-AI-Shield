@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * Implémentation concrète de l'interface du COEUR, utilisant Spring Data JPA.
  */
-@Service // Rend cette classe injectable par Spring
+@Service
 public class BehaviorRepositoryImpl implements BehaviorRepository {
 
     private final JpaBehaviorRepository jpaRepository;
@@ -22,17 +22,22 @@ public class BehaviorRepositoryImpl implements BehaviorRepository {
         this.jpaRepository = jpaRepository;
     }
 
-    // --- Mapper les entités JPA vers les modèles du Cœur (et vice-versa) ---
-
     @Override
     public UserBehavior save(UserBehavior behavior) {
+
+        // --- NOUVEAU : Enregistrement des facteurs dans eventType (solution temporaire) ---
+        String factorSummary = behavior.riskScore().contributingFactors().stream()
+                .map(f -> f.name() + ":" + f.weight())
+                .collect(Collectors.joining("; "));
+        // ----------------------------------------------------------------------------
+
         // 1. Conversion du modèle Core vers l'entité JPA
         UserBehaviorEntity entity = new UserBehaviorEntity(
                 behavior.userId(),
                 behavior.ipAddress(),
-                behavior.eventType(),
+                factorSummary.isEmpty() ? behavior.eventType() : factorSummary, // Utilise les facteurs ou l'eventType de base
                 behavior.requestUrl(),
-                behavior.riskScore().score() // Stocke seulement le double du score
+                behavior.riskScore().score()
         );
 
         // 2. Sauvegarde dans la base de données
@@ -42,20 +47,18 @@ public class BehaviorRepositoryImpl implements BehaviorRepository {
         return mapEntityToCore(savedEntity);
     }
 
+    // ... (Le reste de la classe findRecentByUserId et mapEntityToCore est inchangé) ...
+
     @Override
     public List<UserBehavior> findRecentByUserId(String userId, int limit) {
         List<UserBehaviorEntity> entities = jpaRepository.findRecentByUserIdNative(userId, limit);
 
-        // Conversion des entités JPA en modèles Core
         return entities.stream()
                 .map(this::mapEntityToCore)
                 .collect(Collectors.toList());
     }
 
-    // Méthode utilitaire pour convertir l'entité JPA en modèle Core
     private UserBehavior mapEntityToCore(UserBehaviorEntity entity) {
-        // Attention : Le Reason (raison) est perdu lors du stockage JPA simple,
-        // nous le reconstruisons avec une valeur par défaut pour l'instant.
         RiskScore score = new RiskScore(entity.getRiskScore(), "Raison inconnue (Récupéré de BDD)");
 
         return new UserBehavior(
