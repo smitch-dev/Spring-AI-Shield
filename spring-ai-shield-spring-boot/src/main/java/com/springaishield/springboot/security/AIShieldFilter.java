@@ -8,6 +8,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,8 @@ import com.springaishield.core.repository.BehaviorRepository; // NOUVEL IMPORT
  * Filtre principal inséré dans la chaîne Spring Security.
  * Il intercepte chaque requête, calcule le risque et décide de l'action.
  */
+
+@Order(1)
 public class AIShieldFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(AIShieldFilter.class);
