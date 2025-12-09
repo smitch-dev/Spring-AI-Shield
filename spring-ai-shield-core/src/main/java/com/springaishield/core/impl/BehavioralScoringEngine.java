@@ -33,26 +33,25 @@ public class BehavioralScoringEngine implements RiskScoringService {
 
         List<RiskFactor> factors = new ArrayList<>();
 
-        // --- 1. Analyse ML / Prédiction Comportementale ---
+        // --- 1. Machine Learning Analysis / Behavioral Prediction ---
         analyzeMachineLearning(context, factors);
 
-        // --- 2. Analyse de Contenu (Heuristiques Simples) ---
+        // --- 2. Content Analysis (Simple Heuristics) ---
         analyzeContent(context, factors);
 
-        // --- 3. Calcul du Score Final (Hybride) ---
-
+        // --- 3. Calculation of the Final Score (Hybrid) ---
         double totalScore = factors.stream().mapToDouble(RiskFactor::weight).sum();
 
         if (factors.isEmpty()) {
             return RiskScore.low();
         }
 
-        // Limiter le score au maximum défini
+        // Limit the score to the defined maximum
         if (totalScore > MAX_RISK_SCORE) {
             totalScore = MAX_RISK_SCORE;
         }
 
-        // Déterminer la raison principale (détail du facteur le plus lourd)
+        // Determine the main reason (detail of the most significant factor)
         String primaryReason = factors.stream()
                 .max((f1, f2) -> Double.compare(f1.weight(), f2.weight()))
                 .map(RiskFactor::detail)
@@ -62,16 +61,16 @@ public class BehavioralScoringEngine implements RiskScoringService {
     }
 
     /**
-     * Déléguée au MLPredictor pour analyser l'historique et le contexte.
+     * Assigned to MLPredictor to analyze history and context.
      */
     private void analyzeMachineLearning(SecurityContext context, List<RiskFactor> factors) {
-        // Récupérer l'historique nécessaire pour le Feature Engineering du modèle ML
+        // Retrieving the history required for Feature Engineering of the ML model
         List<UserBehavior> recentHistory = behaviorRepository.findRecentByUserId(context.userId(), 50);
 
-        // La logique est déléguée au prédicteur ML
+        // The logic is delegated to the ML predictor.
         double mlPrediction = mlPredictor.predictRisk(context, recentHistory);
 
-        // Interprétation du résultat du modèle ML
+        // Interpretation of the ML model result
         if (mlPrediction > 0.5) {
             factors.add(new RiskFactor("ML_PREDICTION", 0.5, "Le modèle ML prédit un comportement anormal élevé. Score: " + String.format("%.2f", mlPrediction)));
         } else if (mlPrediction > 0.2) {
@@ -80,22 +79,22 @@ public class BehavioralScoringEngine implements RiskScoringService {
     }
 
     /**
-     * Analyse les données de la requête (URL, corps) pour des motifs d'attaque connus (heuristiques).
+     * Analyzes query data (URL, body) for known attack patterns (heuristics).
      */
     private void analyzeContent(SecurityContext context, List<RiskFactor> factors) {
         String requestContent = context.requestUrl().toLowerCase();
 
-        // Heuristique pour Injection SQL (SQLi)
+        // Heuristics for SQL Injection (SQLi)
         if (requestContent.contains("select") || requestContent.contains("union") || requestContent.contains("--")) {
             factors.add(new RiskFactor("SQL_HEURISTIC", 0.6, "Mot-clé SQL dangereux (SELECT/UNION) détecté."));
         }
 
-        // Heuristique pour Cross-Site Scripting (XSS)
+        // Heuristics for Cross-Site Scripting (XSS)
         if (requestContent.contains("<script>") || requestContent.contains("onerror") || requestContent.contains("alert(")) {
             factors.add(new RiskFactor("XSS_HEURISTIC", 0.5, "Mot-clé XSS potentiel (<script>) détecté."));
         }
 
-        // Règle de blocage héritée du MVP pour le test
+        // Blocking rule inherited from the MVP for testing
         if (requestContent.contains("riskhigh")) {
             factors.add(new RiskFactor("CRITICAL_URL", 0.9, "Détection de pattern critique par URL (test)."));
         }

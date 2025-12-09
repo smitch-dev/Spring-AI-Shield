@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Implémentation concrète de l'interface du COEUR, utilisant Spring Data JPA.
+ * Concrete implementation of the COEUR interface, using Spring Data JPA.
  */
 @Service
 public class BehaviorRepositoryImpl implements BehaviorRepository {
@@ -25,13 +25,13 @@ public class BehaviorRepositoryImpl implements BehaviorRepository {
     @Override
     public UserBehavior save(UserBehavior behavior) {
 
-        // --- NOUVEAU : Enregistrement des facteurs dans eventType (solution temporaire) ---
+
         String factorSummary = behavior.riskScore().contributingFactors().stream()
                 .map(f -> f.name() + ":" + f.weight())
                 .collect(Collectors.joining("; "));
-        // ----------------------------------------------------------------------------
 
-        // 1. Conversion du modèle Core vers l'entité JPA
+
+        // 1. Conversion of the Core model to the JPA entity
         UserBehaviorEntity entity = new UserBehaviorEntity(
                 behavior.userId(),
                 behavior.ipAddress(),
@@ -40,14 +40,13 @@ public class BehaviorRepositoryImpl implements BehaviorRepository {
                 behavior.riskScore().score()
         );
 
-        // 2. Sauvegarde dans la base de données
+        // 2. Saved to the database
         UserBehaviorEntity savedEntity = jpaRepository.save(entity);
 
         // 3. Reconversion vers le modèle Core à retourner
         return mapEntityToCore(savedEntity);
     }
 
-    // ... (Le reste de la classe findRecentByUserId et mapEntityToCore est inchangé) ...
 
     @Override
     public List<UserBehavior> findRecentByUserId(String userId, int limit) {

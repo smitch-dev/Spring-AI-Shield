@@ -15,13 +15,13 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- Dépendance Spring AI Shield (version héritée du parent) -->
+
         <dependency>
             <groupId>com.springaishield</groupId>
             <artifactId>spring-ai-shield-spring-boot</artifactId>
         </dependency>
 
-        <!-- Dépendances Spring Boot -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>

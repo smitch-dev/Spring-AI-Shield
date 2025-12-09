@@ -8,7 +8,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class DemoSecurityConfig {
 
-    // N'INJECTE PLUS AIShieldFilter.
     // Il est géré et inséré par l'Auto-Configuration de la librairie.
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

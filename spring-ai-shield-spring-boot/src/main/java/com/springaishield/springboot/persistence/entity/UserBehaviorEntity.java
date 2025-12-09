@@ -7,35 +7,26 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
-/**
- * Entité JPA concrète pour stocker le comportement utilisateur.
- * Note : Les détails spécifiques au RiskScore sont simplifiés ici pour l'entité.
- */
 @Entity
 @Table(name = "ai_user_behavior")
 public class UserBehaviorEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Utilisation d'un Long pour l'ID JPA
+    private Long id;
 
     private String userId;
     private String ipAddress;
     private String eventType;
     private String requestUrl;
 
-    // Simplification : stocker le score comme un double pour l'analyse
+
     private double riskScore;
 
     private Instant timestamp;
 
-    // --- Constructeurs et Getters/Setters (omises pour la concision) ---
-    // IntelliJ peut les générer automatiquement (Alt+Insert ou Cmd+N)
-
-    // Exemple de constructeur vide (requis par JPA)
     public UserBehaviorEntity() {}
 
-    // Exemple de constructeur complet
     public UserBehaviorEntity(String userId, String ipAddress, String eventType, String requestUrl, double riskScore) {
         this.userId = userId;
         this.ipAddress = ipAddress;

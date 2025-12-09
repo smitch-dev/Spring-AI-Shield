@@ -24,7 +24,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- BOM Spring Boot -->
+            
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -33,7 +33,7 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- Dépendances internes -->
+
             <dependency>
                 <groupId>com.springaishield</groupId>
                 <artifactId>spring-ai-shield-core</artifactId>

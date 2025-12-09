@@ -13,10 +13,7 @@ public class DemoController {
     }
 
     @GetMapping("/search")
-    // DÉFINISSEZ EXPLICITEMENT LE NOM DU PARAMÈTRE : name="q"
     public String search(@RequestParam(name = "q") String query) {
-        // Renommer la variable interne en 'query' est plus clair.
-        // Spring utilise 'name="q"' pour trouver le paramètre dans l'URL.
         return "Search results for: " + query;
     }
 }

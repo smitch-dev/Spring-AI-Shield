@@ -20,8 +20,8 @@ import com.springaishield.core.model.UserBehavior; // NOUVEL IMPORT
 import com.springaishield.core.repository.BehaviorRepository; // NOUVEL IMPORT
 
 /**
- * Filtre principal inséré dans la chaîne Spring Security.
- * Il intercepte chaque requête, calcule le risque et décide de l'action.
+ * Main filter inserted into the Spring Security chain.
+ * * It intercepts each request, calculates the risk, and decides on the action.
  */
 
 @Order(1)
@@ -32,7 +32,7 @@ public class AIShieldFilter extends OncePerRequestFilter {
     private final RiskScoringService riskScoringService;
     private final BehaviorRepository behaviorRepository;
 
-    // Le filtre a besoin du service de scoring (injecté par Spring)
+    // The filter of the scoring service injected by Spring
     public AIShieldFilter(RiskScoringService riskScoringService, BehaviorRepository behaviorRepository) {
         this.riskScoringService = riskScoringService;
         this.behaviorRepository = behaviorRepository;
@@ -42,27 +42,26 @@ public class AIShieldFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1. Collecte du Contexte
+        // 1. Context Collection
         String ipAddress = request.getRemoteAddr();
         String requestUrl = request.getRequestURI();
         if (request.getQueryString() != null) {
             requestUrl += "?" + request.getQueryString(); // Inclut les paramètres
         }
-        // userId est simple pour l'instant; il sera plus complexe une fois l'utilisateur authentifié
+
         String userId = request.getRemoteUser() != null ? request.getRemoteUser() : "ANONYMOUS";
 
-        // Définir le type d'événement initial : par défaut, un accès simple.
         String eventType = "ACCESS_GRANTED";
 
         SecurityContext context = new SecurityContext(userId, ipAddress, requestUrl);
 
-        // 2. Calcul du Score de Risque (Appel à notre module Core)
+        // 2. Risk Score Calculation (Call to our Core module)
         RiskScore risk = riskScoringService.calculateRisk(context);
 
         log.info("AIShield Analysis: URL={} | User={} | Risk Score={} ({})",
                 requestUrl, userId, risk.score(), risk.reason());
 
-        // 3. Prise de Décision (Logique de blocage)
+        // 3. Decision-Making (Blocking Logic)
         if (risk.score() > 0.8) {
             // Si bloqué, l'événement est un DENIAL
             eventType = "ACCESS_DENIED";
@@ -71,11 +70,11 @@ public class AIShieldFilter extends OncePerRequestFilter {
             response.getWriter().write("Accès bloqué par Spring AI Shield : Risque élevé.");
         }
 
-        // 4. SAUVEGARDE DANS LA BASE DE DONNÉES
+        // 4. BACK UP IN DATABASE
         UserBehavior behavior = new UserBehavior(userId, ipAddress, eventType, requestUrl, risk);
         behaviorRepository.save(behavior);
 
-        // 5. Continuation de la chaîne (seulement si non bloqué)
+        // 5. Chain continuation (only if not blocked)
         if (risk.score() <= 0.8) {
             filterChain.doFilter(request, response);
         }

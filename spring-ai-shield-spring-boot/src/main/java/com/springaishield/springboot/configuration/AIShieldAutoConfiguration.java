@@ -15,7 +15,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.core.Ordered;
 
 /**
- * Classe d'Auto-Configuration de Spring Boot pour le module AI Shield.
+ * Spring Boot Auto-Configuration Class for the AI ​​Shield module.
  */
 @Configuration
 @ComponentScan(basePackages = "com.springaishield.springboot")
@@ -44,7 +44,7 @@ public class AIShieldAutoConfiguration {
         registration.setFilter(aiShieldFilter);
         registration.addUrlPatterns("/*");
 
-        // Priorité la plus élevée pour s'assurer que le filtre est exécuté avant Spring Security
+        // Highest priority to ensure the filter is executed before Spring Security
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
 
         return registration;
