@@ -32,24 +32,27 @@ class BehavioralScoringEngineTest {
     }
 
     @Test
-    @DisplayName("Détection SQLi via SecurityContext")
+    @DisplayName("Détection SQLi")
     void testSqlInjectionDetection() {
-        // Votre moteur analyse requestUrl() du contexte
-        SecurityContext context = new SecurityContext("user1", "SELECT * FROM users", "127.0.0.1");
+        // Assure-toi que "select" est bien passé à l'URL
+        // Structure attendue : SecurityContext(userId, requestUrl, ipAddress)
+        SecurityContext context = new SecurityContext("user1", "http://localhost/api?query=select", "127.0.0.1");
+
         RiskScore result = engine.calculateRisk(context);
 
-        assertTrue(result.score() >= 0.6, "Le score devrait détecter l'heuristique SQL (0.6).");
+        // Si ça affiche toujours 0.1, c'est que l'URL reçue par le moteur est nulle ou différente
+        assertEquals(0.6, result.score(), "Le moteur devrait retourner 0.6 pour un pattern SQL.");
     }
 
     @Test
-    @DisplayName("Détection XSS via SecurityContext")
+    @DisplayName("Détection XSS")
     void testXssDetection() {
-        SecurityContext context = new SecurityContext("user1", "<script>alert(1)</script>", "127.0.0.1");
+        SecurityContext context = new SecurityContext("user1", "/test?<script>", "127.0.0.1");
+
         RiskScore result = engine.calculateRisk(context);
 
-        assertTrue(result.score() >= 0.5, "Le score devrait détecter l'heuristique XSS (0.5).");
+        assertEquals(0.5, result.score(), "Le moteur devrait retourner 0.5 pour un pattern XSS.");
     }
-
     @Test
     @DisplayName("Vérification du Record UserBehavior")
     void testUserBehaviorRecord() {
