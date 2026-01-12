@@ -20,7 +20,7 @@ Step 1. Add the JitPack repository to your build file
 <repositories>
     <repository>
         <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
+        <url>[https://jitpack.io](https://jitpack.io)</url>
     </repository>
 </repositories>
 ```
@@ -29,13 +29,14 @@ Add the following dependency to your application's `pom.xml`:
 Step 2. Add the dependency
 ```xml
 <dependency>
-    <groupId>com.github.smitch-dev</groupId>
+    <groupId>com.github.smitch-dev.Spring-AI-Shield</groupId>
     <artifactId>spring-ai-shield-spring-boot</artifactId>
-    <version>v3.0.0</version>
+    <version>v3.1.0</version>
 </dependency>
 ```
 
 ### 2. Auto-Activation
+
 Once the dependency is added, the library is automatically active. The necessary components are registered:
 
 The AIShieldFilter starts monitoring all endpoints (/*).
@@ -53,6 +54,7 @@ spring.datasource.username=dbuser
 spring.datasource.password=dbpass
 # Ensure the DDL-auto is set to update to create the 'ai_user_behavior' table
 spring.jpa.hibernate.ddl-auto=update
+
 
 ### 4. How Blocking Works
 
@@ -73,7 +75,7 @@ Allowed Logic: If the score is below 0.5, the request proceeds to the next filte
 Allowed Logic: If the request is permitted, the behavior and score are recorded in the database for future risk scoring.
 
 
-## 🛡️ Testing the Shield (Example Attack)
+## Testing the Shield (Example Attack)
 
 You can test the successful deployment of the shield using simple URL-based attacks:
 
