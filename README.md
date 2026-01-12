@@ -31,7 +31,7 @@ Step 2. Add the dependency
 <dependency>
     <groupId>com.github.smitch-dev</groupId>
     <artifactId>spring-ai-shield-spring-boot</artifactId>
-    <version>v1.0.0</version>
+    <version>v3.0.0</version>
 </dependency>
 ```
 
