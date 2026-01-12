@@ -1,5 +1,4 @@
-# Configuration pour JitPack
 jdk:
   - openjdk17
 install:
-  - mvn clean install -DskipTests
+  - mvn install -DskipTests

@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.springaishield</groupId>
         <artifactId>spring-ai-shield-parent</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -15,24 +15,19 @@
     <packaging>jar</packaging>
 
     <dependencies>
-
         <dependency>
             <groupId>com.springaishield</groupId>
             <artifactId>spring-ai-shield-spring-boot</artifactId>
         </dependency>
-
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
