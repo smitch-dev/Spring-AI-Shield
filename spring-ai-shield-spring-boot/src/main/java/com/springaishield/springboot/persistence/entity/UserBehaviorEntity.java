@@ -1,10 +1,6 @@
 package com.springaishield.springboot.persistence.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
@@ -17,16 +13,19 @@ public class UserBehaviorEntity {
 
     private String userId;
     private String ipAddress;
-    private String eventType;
-    private String requestUrl;
+    private String eventType; // Contiendra "ACCESS_GRANTED", "ACCESS_DENIED" ou le résumé des facteurs
 
+    @Column(length = 1024) // Les URLs avec paramètres peuvent être longues
+    private String requestUrl;
 
     private double riskScore;
 
     private Instant timestamp;
 
+    // Constructeur par défaut requis par JPA
     public UserBehaviorEntity() {}
 
+    // Constructeur complet
     public UserBehaviorEntity(String userId, String ipAddress, String eventType, String requestUrl, double riskScore) {
         this.userId = userId;
         this.ipAddress = ipAddress;

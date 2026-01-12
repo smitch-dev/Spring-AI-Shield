@@ -18,10 +18,17 @@ import org.springframework.core.Ordered;
  * Spring Boot Auto-Configuration Class for the AI ​​Shield module.
  */
 @Configuration
-@ComponentScan(basePackages = "com.springaishield.springboot")
+
 @EntityScan(basePackages = "com.springaishield.springboot.persistence.entity")
 @EnableJpaRepositories(basePackages = "com.springaishield.springboot.persistence.jpa")
 public class AIShieldAutoConfiguration {
+
+    // On déclare explicitement le RepositoryImpl si on a supprimé le ComponentScan
+    @Bean
+    @ConditionalOnMissingBean
+    public BehaviorRepository behaviorRepository(com.springaishield.springboot.persistence.jpa.JpaBehaviorRepository jpaRepo) {
+        return new com.springaishield.springboot.service.BehaviorRepositoryImpl(jpaRepo);
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -43,10 +50,7 @@ public class AIShieldAutoConfiguration {
         FilterRegistrationBean<AIShieldFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(aiShieldFilter);
         registration.addUrlPatterns("/*");
-
-        // Highest priority to ensure the filter is executed before Spring Security
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
-
         return registration;
     }
 }

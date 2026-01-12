@@ -7,12 +7,14 @@ import com.springaishield.core.model.UserBehavior;
 import com.springaishield.core.repository.BehaviorRepository;
 import com.springaishield.core.service.RiskScoringService;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * Moteur de scoring de risque Hybride.
+ * Moteur de scoring de risque Hybride mis à jour pour décodage URL.
  */
 public class BehavioralScoringEngine implements RiskScoringService {
 
@@ -58,10 +60,9 @@ public class BehavioralScoringEngine implements RiskScoringService {
         List<UserBehavior> recentHistory = behaviorRepository.findRecentByUserId(context.userId(), 50);
         double mlPrediction = mlPredictor.predictRisk(context, recentHistory);
 
-        // On n'ajoute un facteur que si la prédiction dépasse un seuil significatif
         if (mlPrediction > 0.5) {
             factors.add(new RiskFactor("ML_PREDICTION", 0.5, "Comportement anormal élevé détecté par ML."));
-        } else if (mlPrediction > 0.3) { // Seuil augmenté pour éviter les faux positifs à 0.2
+        } else if (mlPrediction > 0.3) {
             factors.add(new RiskFactor("ML_PREDICTION", 0.2, "Comportement légèrement suspect détecté par ML."));
         }
     }
@@ -69,22 +70,33 @@ public class BehavioralScoringEngine implements RiskScoringService {
     private void analyzeContent(SecurityContext context, List<RiskFactor> factors) {
         if (context.requestUrl() == null) return;
 
-        // Conversion en minuscules pour l'insensibilité à la casse
-        String requestContent = context.requestUrl().toLowerCase(Locale.ROOT);
+        try {
+            // 1. Décodage de l'URL (pour transformer %3C en <, %3E en >, etc.)
+            // On le fait avant le toLowerCase pour éviter des problèmes de caractères spéciaux
+            String decodedContent = URLDecoder.decode(context.requestUrl(), StandardCharsets.UTF_8)
+                    .toLowerCase(Locale.ROOT);
 
-        // Heuristiques SQL
-        if (requestContent.contains("select") || requestContent.contains("union") || requestContent.contains("--")) {
-            factors.add(new RiskFactor("SQL_HEURISTIC", 0.6, "Mot-clé SQL dangereux détecté."));
-        }
+            // 2. Heuristiques SQL sur le contenu décodé
+            if (decodedContent.contains("select") || decodedContent.contains("union") || decodedContent.contains("--")) {
+                factors.add(new RiskFactor("SQL_HEURISTIC", 0.6, "Mot-clé SQL dangereux détecté."));
+            }
 
-        // Heuristiques XSS
-        if (requestContent.contains("<script>") || requestContent.contains("onerror") || requestContent.contains("alert(")) {
-            factors.add(new RiskFactor("XSS_HEURISTIC", 0.5, "Pattern XSS potentiel détecté."));
-        }
+            // 3. Heuristiques XSS sur le contenu décodé (Maintenant ça va détecter <script>)
+            if (decodedContent.contains("<script>") || decodedContent.contains("onerror") || decodedContent.contains("alert(")) {
+                factors.add(new RiskFactor("XSS_HEURISTIC", 0.5, "Pattern XSS potentiel détecté."));
+            }
 
-        // Test de pattern critique
-        if (requestContent.contains("riskhigh")) {
-            factors.add(new RiskFactor("CRITICAL_URL", 0.9, "Pattern critique détecté (test)."));
+            // 4. Test de pattern critique
+            if (decodedContent.contains("riskhigh")) {
+                factors.add(new RiskFactor("CRITICAL_URL", 0.9, "Pattern critique détecté (test)."));
+            }
+
+        } catch (Exception e) {
+            // En cas d'erreur de décodage, on analyse la chaîne brute par sécurité
+            String rawContent = context.requestUrl().toLowerCase(Locale.ROOT);
+            if (rawContent.contains("select") || rawContent.contains("<script>")) {
+                factors.add(new RiskFactor("DECODE_ERROR_SUSPICION", 0.5, "Requête suspecte mal formée."));
+            }
         }
     }
 }

@@ -12,8 +12,9 @@ public class DemoController {
         return "Hello World! Accès autorisé.";
     }
 
+    // C'est cette méthode que nous allons utiliser pour tester le bouclier
     @GetMapping("/search")
-    public String search(@RequestParam(name = "q") String query) {
-        return "Search results for: " + query;
+    public String search(@RequestParam(name = "q", defaultValue = "") String query) {
+        return "Résultats de recherche pour : " + query;
     }
 }

@@ -9,9 +9,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Collections;
 
 /**
- * Concrete implementation of the COEUR interface, using Spring Data JPA.
+ * Implémentation concrète de l'interface du Core, utilisant Spring Data JPA.
  */
 @Service
 public class BehaviorRepositoryImpl implements BehaviorRepository {
@@ -24,42 +25,46 @@ public class BehaviorRepositoryImpl implements BehaviorRepository {
 
     @Override
     public UserBehavior save(UserBehavior behavior) {
-
-
+        // Préparation du résumé des facteurs de risque pour le stockage
         String factorSummary = behavior.riskScore().contributingFactors().stream()
                 .map(f -> f.name() + ":" + f.weight())
                 .collect(Collectors.joining("; "));
 
+        // On utilise la raison du risque s'il n'y a pas de facteurs détaillés
+        String eventDetails = factorSummary.isEmpty() ? behavior.riskScore().reason() : factorSummary;
 
-        // 1. Conversion of the Core model to the JPA entity
+        // 1. Conversion du modèle Core vers l'entité JPA
+        // Ordre constructeur Entity: userId, ipAddress, eventType, requestUrl, riskScore
         UserBehaviorEntity entity = new UserBehaviorEntity(
                 behavior.userId(),
                 behavior.ipAddress(),
-                factorSummary.isEmpty() ? behavior.eventType() : factorSummary, // Utilise les facteurs ou l'eventType de base
+                eventDetails,
                 behavior.requestUrl(),
                 behavior.riskScore().score()
         );
 
-        // 2. Saved to the database
+        // 2. Sauvegarde en BDD
         UserBehaviorEntity savedEntity = jpaRepository.save(entity);
 
-        // 3. Reconversion vers le modèle Core à retourner
+        // 3. Reconversion vers le modèle Core
         return mapEntityToCore(savedEntity);
     }
-
 
     @Override
     public List<UserBehavior> findRecentByUserId(String userId, int limit) {
         List<UserBehaviorEntity> entities = jpaRepository.findRecentByUserIdNative(userId, limit);
-
         return entities.stream()
                 .map(this::mapEntityToCore)
                 .collect(Collectors.toList());
     }
 
     private UserBehavior mapEntityToCore(UserBehaviorEntity entity) {
-        RiskScore score = new RiskScore(entity.getRiskScore(), "Raison inconnue (Récupéré de BDD)");
+        // création du RiskScore (les facteurs détaillés sont perdus à la lecture simple,
+        // mais le score et la raison globale sont préservés)
+        RiskScore score = new RiskScore(entity.getRiskScore(), entity.getEventType(), Collections.emptyList());
 
+
+        // Record est (id, userId, requestUrl, ipAddress, eventType, riskScore, timestamp) :
         return new UserBehavior(
                 String.valueOf(entity.getId()),
                 entity.getUserId(),

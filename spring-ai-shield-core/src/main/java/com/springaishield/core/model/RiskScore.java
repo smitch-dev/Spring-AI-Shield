@@ -12,7 +12,7 @@ public record RiskScore(
         String reason,
         List<RiskFactor> contributingFactors // NOUVEAU : Liste des facteurs d'influence
 ) {
-    // Constructeur d'origine mis à jour pour compatibilité
+    // Constructeur d'origine
     public RiskScore(double score, String reason) {
         this(score, reason, Collections.emptyList());
     }
